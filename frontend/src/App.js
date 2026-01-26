@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-// Removed 'Users' and 'CalendarCheck' to fix Vercel build error
+// icons 'Users' and 'CalendarCheck' are removed to prevent Vercel build errors
 import { Trash2, UserPlus, ClipboardList, Briefcase, Filter, Loader2, Mail, Building } from 'lucide-react';
 
-// Use environment variable for production, fallback to local for dev
+// Dynamic API URL: Uses Vercel environment variable or local fallback
 const API = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 function App() {
@@ -74,7 +74,7 @@ function App() {
         const res = await axios.delete(`${API}/employees/${id}`);
         alert(res.data.message || "Record Deleted.");
         fetchAllData();
-      } catch (err) { alert("Delete failed."); }
+      } catch (err) { alert("Delete failed. This employee may have attendance records attached."); }
     }
   };
 
@@ -82,6 +82,12 @@ function App() {
     if (!dateFilter) return attendance;
     return attendance.filter(record => record.date === dateFilter);
   }, [attendance, dateFilter]);
+
+  // Bonus: Calculate Dashboard Stats
+  const stats = useMemo(() => ({
+    total: employees.length,
+    presentToday: attendance.filter(a => a.date === new Date().toISOString().split('T')[0] && a.status === 'Present').length
+  }), [employees, attendance]);
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -102,10 +108,10 @@ function App() {
           </h1>
         </div>
         <div className="flex bg-slate-100 p-1 rounded-xl">
-          <button onClick={() => setView('employees')} className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${view === 'employees' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500'}`}>
+          <button onClick={() => setView('employees')} className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${view === 'employees' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}>
             Employees
           </button>
-          <button onClick={() => setView('attendance')} className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${view === 'attendance' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500'}`}>
+          <button onClick={() => setView('attendance')} className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${view === 'attendance' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}>
             Attendance
           </button>
         </div>
@@ -113,12 +119,11 @@ function App() {
 
       <main className="max-w-6xl mx-auto p-6 md:p-10">
         {view === 'employees' ? (
-          <div className="space-y-8">
-            {/* Using your .card and .input-style classes */}
+          <div className="space-y-8 animate-in fade-in duration-500">
             <div className="card">
               <div className="flex items-center gap-2 mb-6">
                 <UserPlus className="text-indigo-500" size={20} />
-                <h2 className="text-lg font-bold">Register New Employee</h2>
+                <h2 className="text-lg font-bold text-slate-800">Register New Employee</h2>
               </div>
               <form onSubmit={handleAddEmployee} className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <input className="input-style" placeholder="Emp ID" value={formData.emp_id} onChange={e => setFormData({...formData, emp_id: e.target.value})} required />
@@ -131,7 +136,7 @@ function App() {
 
             <div className="card overflow-hidden !p-0">
               <table className="w-full text-left">
-                <thead className="bg-slate-50 border-b">
+                <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
                     <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase">ID / Dept</th>
                     <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase">Employee Details</th>
@@ -139,35 +144,96 @@ function App() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {employees.map(emp => (
-                    <tr key={emp.employee_id} className="hover:bg-slate-50/50">
-                      <td className="px-6 py-4">
-                        <p className="font-mono text-indigo-600 font-bold">{emp.employee_id}</p>
-                        <p className="text-xs text-slate-400 uppercase font-semibold">{emp.department}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="font-bold text-slate-800">{emp.full_name}</p>
-                        <div className="flex items-center gap-1 text-xs text-slate-500"><Mail size={12}/>{emp.email}</div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button onClick={() => deleteEmp(emp.employee_id)} className="text-slate-300 hover:text-rose-500 transition-colors">
-                          <Trash2 size={20} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {employees.length === 0 ? (
+                    <tr><td colSpan="3" className="px-6 py-10 text-center text-slate-400 italic">No employees found in the directory.</td></tr>
+                  ) : (
+                    employees.map(emp => (
+                      <tr key={emp.employee_id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <p className="font-mono text-indigo-600 font-bold">{emp.employee_id}</p>
+                          <p className="text-xs text-slate-400 uppercase font-semibold">{emp.department}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="font-bold text-slate-800">{emp.full_name}</p>
+                          <div className="flex items-center gap-1 text-xs text-slate-500"><Mail size={12}/>{emp.email}</div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button onClick={() => deleteEmp(emp.employee_id)} className="text-slate-300 hover:text-rose-500 p-2 hover:bg-rose-50 rounded-lg transition-all">
+                            <Trash2 size={20} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
         ) : (
-          /* Attendance View logic remains similar but wrapped in .card */
-          <div className="card">
-             <h2 className="text-xl font-bold mb-6">Attendance Logs</h2>
-             {/* ... rest of attendance UI ... */}
+          <div className="space-y-8 animate-in slide-in-from-bottom duration-500">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Attendance Form */}
+              <div className="card h-fit">
+                <div className="flex items-center gap-2 mb-6">
+                  <ClipboardList className="text-indigo-500" size={24} />
+                  <h2 className="text-xl font-bold">Mark Status</h2>
+                </div>
+                <form onSubmit={markAttendance} className="space-y-5">
+                  <select className="input-style" onChange={e => setAttData({...attData, emp_id: e.target.value})} required>
+                    <option value="">Choose Employee...</option>
+                    {employees.map(e => <option key={e.employee_id} value={e.employee_id}>{e.full_name}</option>)}
+                  </select>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button type="button" onClick={() => setAttData({...attData, status: 'Present'})} className={`py-3 rounded-xl font-bold border-2 transition-all ${attData.status === 'Present' ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'border-slate-100 text-slate-400'}`}>Present</button>
+                    <button type="button" onClick={() => setAttData({...attData, status: 'Absent'})} className={`py-3 rounded-xl font-bold border-2 transition-all ${attData.status === 'Absent' ? 'border-rose-600 bg-rose-50 text-rose-600' : 'border-slate-100 text-slate-400'}`}>Absent</button>
+                  </div>
+                  <button className="btn-primary w-full py-4">Submit Record</button>
+                </form>
+              </div>
+
+              {/* Attendance History */}
+              <div className="lg:col-span-2 card !p-0 overflow-hidden">
+                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                  <h3 className="font-bold flex items-center gap-2 text-slate-700"><Filter size={18}/> History</h3>
+                  <input type="date" className="p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20" onChange={(e) => setDateFilter(e.target.value)} />
+                </div>
+                <div className="max-h-[500px] overflow-y-auto">
+                  <table className="w-full text-left">
+                    <thead className="bg-slate-50 sticky top-0 border-b">
+                      <tr>
+                        <th className="px-6 py-3 text-xs font-bold text-slate-400 uppercase">Employee ID</th>
+                        <th className="px-6 py-3 text-xs font-bold text-slate-400 uppercase">Date</th>
+                        <th className="px-6 py-3 text-xs font-bold text-slate-400 uppercase text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredAttendance.length === 0 ? (
+                        <tr><td colSpan="3" className="px-6 py-10 text-center text-slate-400 italic">No records found.</td></tr>
+                      ) : (
+                        filteredAttendance.map((rec, i) => (
+                          <tr key={i} className="hover:bg-slate-50/50">
+                            <td className="px-6 py-4 font-semibold text-slate-700">{rec.employee_id}</td>
+                            <td className="px-6 py-4 text-slate-500 text-sm">{rec.date}</td>
+                            <td className="px-6 py-4 text-right">
+                              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${rec.status === 'Present' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                {rec.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </main>
+
+      <footer className="p-10 text-center text-slate-400 text-xs border-t border-slate-100 bg-white">
+        <p>© 2026 HRMS Lite Admin Portal • {stats.total} Total Employees • {stats.presentToday} Present Today</p>
+      </footer>
     </div>
   );
 }
