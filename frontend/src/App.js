@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Users, CalendarCheck, Trash2, UserPlus, ClipboardList, Briefcase, Filter, Loader2, Mail, Building } from 'lucide-react';
+// FIX: Removed unused 'Users' and 'CalendarCheck' to prevent Vercel build failure
+import { Trash2, UserPlus, ClipboardList, Briefcase, Filter, Loader2, Mail, Building } from 'lucide-react';
 
-const API = "http://localhost:8000";
+// FIX: Dynamic API URL for deployment
+const API = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 function App() {
   const [employees, setEmployees] = useState([]);
@@ -81,7 +83,6 @@ function App() {
     return attendance.filter(record => record.date === dateFilter);
   }, [attendance, dateFilter]);
 
-  // Bonus: Calculate Stats
   const stats = useMemo(() => ({
     total: employees.length,
     presentToday: attendance.filter(a => a.date === new Date().toISOString().split('T')[0] && a.status === 'Present').length
@@ -114,7 +115,7 @@ function App() {
 
       <main className="max-w-6xl mx-auto p-6 md:p-10">
         {view === 'employees' ? (
-          <div className="space-y-8">
+          <div className="space-y-8 animate-in fade-in">
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
               <div className="flex items-center gap-2 mb-6">
                 <UserPlus className="text-indigo-500" size={20} />
@@ -168,7 +169,7 @@ function App() {
             </div>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-8 animate-in slide-in-from-bottom">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-200 p-8 h-fit sticky top-28">
                 <div className="flex items-center gap-2 mb-6">
