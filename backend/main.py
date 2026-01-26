@@ -12,7 +12,7 @@ app = FastAPI()
 # 1. ADD CORS MIDDLEWARE (Crucial for Vercel and Local connection)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["*"], # This allows your Vercel URL to talk to Render
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
