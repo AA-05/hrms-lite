@@ -45,7 +45,16 @@ function App() {
         email: formData.email,
         department: formData.dept
       };
-      const res = await axios.post(`${API}/employees`, payload);
+      const res = await axios.post(
+  `${API}/employees`,
+  payload,
+  {
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    }
+  }
+);
       alert(res.data.message || "Employee added successfully!"); 
       setFormData({ emp_id: '', name: '', email: '', dept: '' });
       fetchAllData();
