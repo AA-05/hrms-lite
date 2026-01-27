@@ -71,9 +71,14 @@ def add_employee(emp: EmployeeCreate, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Employee added successfully!"}
 
-@app.get("/employees", response_model=List[EmployeeOut])
+@app.get("/employees")
 def get_employees(db: Session = Depends(get_db)):
-    return db.query(models.Employee).all()
+    try:
+        employees = db.query(models.Employee).limit(10).all()
+        return employees
+    except Exception as e:
+        return {"error": str(e)}
+
 
 
 
