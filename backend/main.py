@@ -3,29 +3,36 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import models
 from database import engine, SessionLocal
+import datetime
 
-# Create tables
+# This creates tables ONLY if the .db file is brand new
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# FIX: Allows connection from your Vercel URL
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # This allows your Vercel site to connect
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Standard dependency to ensure DB sessions close properly
 def get_db():
     db = SessionLocal()
-    try: yield db
-    finally: db.close()
+    try:
+        yield db
+    finally:
+        db.close()
 
 @app.get("/")
 def home():
-    return {"message": "HRMS API is Running", "docs": "/docs"}
+    return {
+        "message": "HRMS API is Running",
+        "endpoints": ["/employees", "/attendance"],
+        "docs": "/docs"
+    }
 
 @app.get("/employees")
 def get_employees(db: Session = Depends(get_db)):
@@ -48,22 +55,20 @@ def delete_employee(emp_id: str, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Deleted"}
 
-# GET route to show all logs
 @app.get("/attendance")
 def get_attendance(db: Session = Depends(get_db)):
+    # This GET request was failing with 500 because the table was missing
     return db.query(models.Attendance).all()
 
-# POST route to record new attendance
 @app.post("/attendance")
 def mark_attendance(att: models.AttendanceCreate, db: Session = Depends(get_db)):
     try:
-        # Use .dict() to unpack the Pydantic model into the SQLAlchemy model
         new_att = models.Attendance(**att.dict())
         db.add(new_att)
         db.commit()
         db.refresh(new_att)
         return {"message": "Attendance recorded!"}
     except Exception as e:
-        # This will show you the REAL error in your browser if it fails again
         db.rollback()
+        # This will reveal the specific SQLite error in your browser console
         raise HTTPException(status_code=500, detail=str(e))
