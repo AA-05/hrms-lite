@@ -56,9 +56,14 @@ def get_attendance(db: Session = Depends(get_db)):
 # POST route to record new attendance
 @app.post("/attendance")
 def mark_attendance(att: models.AttendanceCreate, db: Session = Depends(get_db)):
-    # Create new record using the dictionary from Pydantic
-    new_att = models.Attendance(**att.dict())
-    db.add(new_att)
-    db.commit()
-    db.refresh(new_att)
-    return {"message": "Attendance recorded successfully!"}
+    try:
+        # Use .dict() to unpack the Pydantic model into the SQLAlchemy model
+        new_att = models.Attendance(**att.dict())
+        db.add(new_att)
+        db.commit()
+        db.refresh(new_att)
+        return {"message": "Attendance recorded!"}
+    except Exception as e:
+        # This will show you the REAL error in your browser if it fails again
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
