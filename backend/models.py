@@ -14,10 +14,11 @@ class Employee(Base):
     department = Column(String)
 
 # backend/models.py
+# backend/models.py
 class Attendance(Base):
     __tablename__ = "attendance"
-    # Note: Using a string ID or Auto-increment Integer is required
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True) 
+    # An integer primary key is required for SQLite to manage the rows
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     employee_id = Column(String, index=True)
     status = Column(String)
     date = Column(String, default=lambda: str(datetime.date.today()))
