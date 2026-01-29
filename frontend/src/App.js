@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Trash2, UserPlus, ClipboardList, Briefcase, Filter, Loader2, Mail, Building } from 'lucide-react';
 
 // FIX: Dynamic API URL for deployment
-const API = process.env.REACT_APP_API_URL || "https://hrms-lite-1.vercel.app";
+const API = "https://hrms-lite-backend.onrender.com";
 
 function App() {
   const [employees, setEmployees] = useState([]);
