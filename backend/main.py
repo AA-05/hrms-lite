@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr
-from datetime import datetime
+from pydantic import BaseModel, EmailStr, validator
+from datetime import datetime, date
 from typing import List
 import models, database
 
@@ -38,9 +38,16 @@ class EmployeeCreate(BaseModel):
     full_name: str
     email: EmailStr
     department: str
+    
+    @validator('employee_id')
+    def validate_employee_id(cls, v):
+        if not v or len(v.strip()) == 0:
+            raise ValueError('Employee ID cannot be empty')
+        return v.strip()
 
 
 class EmployeeOut(EmployeeCreate):
+    id: int
     class Config:
         from_attributes = True
 
@@ -51,8 +58,9 @@ class AttendanceCreate(BaseModel):
 
 
 class AttendanceOut(BaseModel):
+    id: int
     employee_id: str
-    date: datetime
+    date: date
     status: str
 
     class Config:
@@ -63,23 +71,36 @@ class AttendanceOut(BaseModel):
 
 @app.post("/employees", status_code=status.HTTP_201_CREATED)
 def add_employee(emp: EmployeeCreate, db: Session = Depends(get_db)):
+    # Check if employee ID already exists
     if db.query(models.Employee).filter(models.Employee.employee_id == emp.employee_id).first():
         raise HTTPException(status_code=400, detail="Employee ID already exists.")
 
     new_emp = models.Employee(**emp.dict())
     db.add(new_emp)
     db.commit()
-    return {"message": "Employee added successfully!"}
+    db.refresh(new_emp)
+    return {"message": "Employee added successfully!", "employee_id": new_emp.id}
 
 @app.get("/employees")
 def get_employees(db: Session = Depends(get_db)):
     try:
-        employees = db.query(models.Employee).limit(10).all()
+        employees = db.query(models.Employee).all()
         return employees
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.delete("/employees/{emp_id}")
+def delete_employee(emp_id: str, db: Session = Depends(get_db)):
+    employee = db.query(models.Employee).filter(models.Employee.employee_id == emp_id).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found.")
+    
+    # Delete related attendance records
+    db.query(models.Attendance).filter(models.Attendance.employee_id == emp_id).delete()
+    db.delete(employee)
+    db.commit()
+    return {"message": "Employee and their records deleted successfully!"}
 
 
 @app.post("/attendance")
@@ -89,7 +110,7 @@ def mark_attendance(att: AttendanceCreate, db: Session = Depends(get_db)):
 
     new_att = models.Attendance(
         employee_id=att.emp_id,
-        date=datetime.now(),
+        date=datetime.now().date(),
         status=att.status
     )
     db.add(new_att)
