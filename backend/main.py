@@ -12,7 +12,7 @@ app = FastAPI()
 # FIX: Allows connection from your Vercel URL
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Open for testing, change to Vercel URL later for security
+    allow_origins=["*"], # This allows your Vercel site to connect
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
