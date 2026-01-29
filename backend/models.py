@@ -21,10 +21,11 @@ class Attendance(Base):
     status = Column(String)
 
 # Pydantic Schemas
+# In backend/models.py
 class EmployeeCreate(BaseModel):
     employee_id: str
     full_name: str
-    email: str
+    email: str  # Using str is safer than EmailStr during initial setup
     department: str
 
 class AttendanceCreate(BaseModel):

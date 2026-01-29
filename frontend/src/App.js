@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Trash2, UserPlus, ClipboardList, Briefcase, Filter, Loader2, Mail, Building } from 'lucide-react';
 
 // FIX: Automatically cleans the URL to prevent /employees/employees error
-const BASE_URL = process.env.REACT_APP_API_URL || "https://hrms-lite-backend.onrender.com";
+const BASE_URL = process.env.REACT_APP_API_URL || "https://hrms-lite-backend-0e5l.onrender.com";
 const API = BASE_URL.replace(/\/$/, ""); 
 
 function App() {
