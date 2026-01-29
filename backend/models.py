@@ -13,12 +13,14 @@ class Employee(Base):
     email = Column(String)
     department = Column(String)
 
+# backend/models.py
 class Attendance(Base):
     __tablename__ = "attendance"
-    id = Column(Date, primary_key=True, default=datetime.date.today) # Simplified ID for logs
-    employee_id = Column(String)
-    date = Column(String, default=lambda: str(datetime.date.today()))
+    # Note: Using a string ID or Auto-increment Integer is required
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True) 
+    employee_id = Column(String, index=True)
     status = Column(String)
+    date = Column(String, default=lambda: str(datetime.date.today()))
 
 # Pydantic Schemas
 # In backend/models.py
@@ -28,6 +30,7 @@ class EmployeeCreate(BaseModel):
     email: str  # Using str is safer than EmailStr during initial setup
     department: str
 
+# This is the "Brain" that validates the incoming data
 class AttendanceCreate(BaseModel):
-    employee_id: str
-    status: str
+    employee_id: str  # Must match 'employee_id' in App.js
+    status: str       # Must match 'status' in App.js

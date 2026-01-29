@@ -48,13 +48,17 @@ def delete_employee(emp_id: str, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Deleted"}
 
+# GET route to show all logs
 @app.get("/attendance")
 def get_attendance(db: Session = Depends(get_db)):
     return db.query(models.Attendance).all()
 
+# POST route to record new attendance
 @app.post("/attendance")
 def mark_attendance(att: models.AttendanceCreate, db: Session = Depends(get_db)):
+    # Create new record using the dictionary from Pydantic
     new_att = models.Attendance(**att.dict())
     db.add(new_att)
     db.commit()
-    return {"message": "Recorded"}
+    db.refresh(new_att)
+    return {"message": "Attendance recorded successfully!"}
