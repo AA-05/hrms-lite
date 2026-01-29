@@ -3,9 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import models
 from database import engine, SessionLocal
-import datetime
 
-# This creates tables ONLY if the .db file is brand new
+# Recreate tables
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -18,21 +17,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Standard dependency to ensure DB sessions close properly
 def get_db():
     db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-@app.get("/")
-def home():
-    return {
-        "message": "HRMS API is Running",
-        "endpoints": ["/employees", "/attendance"],
-        "docs": "/docs"
-    }
+    try: yield db
+    finally: db.close()
 
 @app.get("/employees")
 def get_employees(db: Session = Depends(get_db)):
@@ -46,18 +34,10 @@ def create_employee(employee: models.EmployeeCreate, db: Session = Depends(get_d
     new_emp = models.Employee(**employee.dict())
     db.add(new_emp)
     db.commit()
-    db.refresh(new_emp)
-    return {"message": "Employee added successfully!"}
-
-@app.delete("/employees/{emp_id}")
-def delete_employee(emp_id: str, db: Session = Depends(get_db)):
-    db.query(models.Employee).filter(models.Employee.employee_id == emp_id).delete()
-    db.commit()
-    return {"message": "Deleted"}
+    return {"message": "Success!"}
 
 @app.get("/attendance")
 def get_attendance(db: Session = Depends(get_db)):
-    # This GET request was failing with 500 because the table was missing
     return db.query(models.Attendance).all()
 
 @app.post("/attendance")
@@ -66,9 +46,7 @@ def mark_attendance(att: models.AttendanceCreate, db: Session = Depends(get_db))
         new_att = models.Attendance(**att.dict())
         db.add(new_att)
         db.commit()
-        db.refresh(new_att)
-        return {"message": "Attendance recorded!"}
+        return {"message": "Recorded!"}
     except Exception as e:
         db.rollback()
-        # This will reveal the specific SQLite error in your browser console
         raise HTTPException(status_code=500, detail=str(e))
